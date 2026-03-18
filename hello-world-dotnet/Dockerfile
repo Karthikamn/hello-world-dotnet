@@ -1,16 +1,24 @@
+# ---------- Build stage ----------
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS builder
 WORKDIR /usr/src/app
 
-# download deps
+# Copy csproj and restore dependencies
 COPY hello-world-dotnet.csproj .
 RUN dotnet restore
 
+# Copy source and build
 COPY . .
-RUN dotnet publish -c Release
+RUN dotnet publish -c Release -o /app/publish
 
-# Build runtime image
+# ---------- Runtime stage ----------
 FROM mcr.microsoft.com/dotnet/aspnet:5.0
 WORKDIR /usr/src/app
 
-COPY --from=builder /usr/src/app/bin .
-ENTRYPOINT ["dotnet", "Release/net5.0/hello-world-dotnet.dll"]
+# Copy published output
+COPY --from=builder /app/publish .
+
+# ASP.NET Core listens on port 80 inside container
+EXPOSE 80
+
+ENTRYPOINT ["dotnet", "hello-world-dotnet.dll"]
+``
